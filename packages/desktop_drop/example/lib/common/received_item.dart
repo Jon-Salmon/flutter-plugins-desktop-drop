@@ -26,11 +26,11 @@ Future<Map<DropItem, ReceivedItem>> readDrop(
         // Keep the discovered entries even if one later entry fails.
         content[item] = ReceivedItem(children: children);
         await for (final entity in item.directory.list()) {
-          final segments = Uri.parse(entity.uri).pathSegments
-              .where((part) => part.isNotEmpty);
-          final name = entity is XFile ? await entity.name() : null;
-          final label =
-              name ?? (segments.isEmpty ? 'Unnamed item' : segments.last);
+          final label = switch (entity) {
+            XFile() => entity.name,
+            XDirectory() => entity.name,
+            _ => 'Unnamed item',
+          };
           final child = switch (entity) {
             XFile() => DropFileItem(file: entity, name: label),
             XDirectory() => DropDirectoryItem(directory: entity, name: label),

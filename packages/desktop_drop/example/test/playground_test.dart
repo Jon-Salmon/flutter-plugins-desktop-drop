@@ -1,4 +1,3 @@
-import 'package:cross_file_io/cross_file_io.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:desktop_drop/src/native_transport.dart';
 import 'package:desktop_drop_example/pages/drop_stage.dart';
@@ -43,7 +42,6 @@ Map<String, Object?> args(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() {
-    CrossFileIO.registerWith();
     NativeTransport.debugOverride = transport;
   });
   setUp(() {

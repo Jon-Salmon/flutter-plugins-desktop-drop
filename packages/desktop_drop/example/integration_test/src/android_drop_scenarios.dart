@@ -155,8 +155,20 @@ void registerAndroidDropTests() {
                     .toList();
                 final again = await directory.directory.list().toList();
                 expect(
-                  again.map((item) => item.uri),
-                  first.map((item) => item.uri),
+                  again.map(
+                    (item) => switch (item) {
+                      XFile() => item.name,
+                      XDirectory() => item.name,
+                      _ => null,
+                    },
+                  ),
+                  first.map(
+                    (item) => switch (item) {
+                      XFile() => item.name,
+                      XDirectory() => item.name,
+                      _ => null,
+                    },
+                  ),
                 );
                 received.complete([
                   await first.whereType<XFile>().single.readAsString(),

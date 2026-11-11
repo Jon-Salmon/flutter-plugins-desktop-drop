@@ -2,6 +2,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:flutter/foundation.dart';
 
 import 'file_mime_type.dart';
+import 'virtual_directory.dart';
 
 /// One representation supplied by the drag source. Multiple representations
 /// can describe the same content; applications choose which ones to consume.
@@ -34,7 +35,7 @@ final class DropFileItem extends DropItem {
     Uint8List? appleBookmark,
     bool isPromised = false,
   }) => DropFileItem(
-    file: XFile.fileSystem(path: path),
+    file: XFile(path),
     name: name ?? path.split(RegExp(r'[/\\]')).last,
     mimeType: mimeType,
     localPath: path,

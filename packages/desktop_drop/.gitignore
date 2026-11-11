@@ -13,3 +13,6 @@ build/
 /pubspec.lock
 
 .vscode
+
+# Standalone example dependencies are resolved independently.
+/example/pubspec.lock

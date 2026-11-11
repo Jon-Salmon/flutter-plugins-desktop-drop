@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
-import 'package:cross_file_platform_interface/cross_file_platform_interface.dart';
+
+import 'virtual_directory.dart';
+import 'save_file_stub.dart' if (dart.library.io) 'save_file_io.dart';
+
 import 'package:flutter/services.dart';
 
 import 'native_transport_stub.dart'
@@ -11,17 +14,14 @@ import 'native_transport_stub.dart'
 // These are access references, not snapshots. The native provider can expire
 // independently of the Dart objects; reads propagate its errors to the caller.
 XFile sourceFile(Map<Object?, Object?> source, String name) =>
-    // ignore: invalid_use_of_internal_member
-    ScopedStorageXFile.fromPlatform(_SourceFile(source, name));
+    _SourceFile(source, name);
 
 XDirectory sourceDirectory(Map<Object?, Object?> source) =>
-    // ignore: invalid_use_of_internal_member
-    ScopedStorageXDirectory.fromPlatform(_SourceDirectory(source));
+    _SourceDirectory(source);
 
 /// Explicit access request; ordinary reads never show platform UI.
 Future<void> requestSourceDirectoryAccess(XDirectory directory) async {
-  // ignore: invalid_use_of_internal_member
-  final platform = directory.platform;
+  final platform = directory;
   if (platform is! _SourceDirectory) {
     throw UnsupportedError('Directory is not backed by an Android drop source');
   }
@@ -50,32 +50,27 @@ Future<String?> _resolvePath(Map<Object?, Object?> source) async {
   return path;
 }
 
-String _uri(Map<Object?, Object?> source) =>
-    'desktop-drop:source/${source['view']}/${source['generation']}/'
-    '${source['session']}/${source['source']}/${Uri.encodeComponent(source['name'] as String? ?? '')}';
-
-final class _SourceFile extends PlatformScopedStorageXFile {
-  _SourceFile(this.source, this.fileName)
-    : super.implementation(
-        PlatformScopedStorageXFileCreationParams(uri: _uri(source)),
-      );
+final class _SourceFile extends XFile {
+  _SourceFile(this.source, this.fileName) : super('');
 
   final Map<Object?, Object?> source;
   final String fileName;
   late final Future<XFile?> _file = _resolvePath(source)
-      .then((path) => path == null ? null : XFile.fileSystem(path: path));
+      .then((path) => path == null ? null : XFile(path));
   bool _disposed = false;
 
   void _check() {
     if (_disposed) throw StateError('Dropped source has been released');
   }
 
-  @override
   Future<bool> exists() async {
     _check();
     try {
       final file = await _file;
-      if (file != null) return await file.exists();
+      if (file != null) {
+        await file.length();
+        return true;
+      }
       await _invoke<Object>(source, 'stat');
       return true;
     } on PlatformException {
@@ -83,30 +78,33 @@ final class _SourceFile extends PlatformScopedStorageXFile {
     }
   }
 
-  @override
   Future<bool> canRead() => exists();
-  @override
   Future<void> dispose() async {
     _disposed = true;
   }
 
   @override
-  Future<DateTime?> lastModified() async {
+  Future<DateTime> lastModified() async {
     _check();
-    return (await _file)?.lastModified();
+    return await (await _file)?.lastModified() ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   @override
-  Future<int?> length() async {
+  Future<int> length() async {
     _check();
     final file = await _file;
     if (file != null) return file.length();
     final value = await _invoke<Map>(source, 'stat');
-    return value?['length'] as int?;
+    return value?['length'] as int? ?? (await readAsBytes()).length;
   }
 
   @override
-  Future<String?> name() async => fileName.isEmpty ? null : fileName;
+  String get name => fileName;
+  @override
+  String get path => '';
+  @override
+  Future<void> saveTo(String path) => saveFile(this, path);
   @override
   Future<Uint8List> readAsBytes() async {
     final builder = BytesBuilder(copy: false);
@@ -155,11 +153,11 @@ final class _SourceFile extends PlatformScopedStorageXFile {
   }
 }
 
-final class _SourceDirectory extends PlatformScopedStorageXDirectory {
-  _SourceDirectory(this.source)
-    : super.implementation(
-        PlatformScopedStorageXDirectoryCreationParams(uri: _uri(source)),
-      );
+final class _SourceDirectory extends XDirectory {
+  _SourceDirectory(this.source);
+  @override
+  String get name => source['name'] as String? ?? '';
+
   final Map<Object?, Object?> source;
   late final Future<XDirectory?> _directory = _resolvePath(source)
       .then((path) => path == null ? null : XDirectory.fileSystem(path: path));
@@ -185,13 +183,12 @@ final class _SourceDirectory extends PlatformScopedStorageXDirectory {
   }
 
   @override
-  Stream<PlatformXEntity> list(PlatformListParams params) async* {
+  Stream<Object> list() async* {
     if (_disposed) throw StateError('Dropped source has been released');
     final directory = await _directory;
     if (_disposed) throw StateError('Dropped source has been released');
     if (directory != null) {
-      // ignore: invalid_use_of_internal_member
-      yield* directory.platform.list(params);
+      yield* directory.list();
       return;
     }
     final children = await _invoke<List>(source, 'list');
@@ -209,8 +206,7 @@ final class _SourceDirectory extends PlatformScopedStorageXDirectory {
       final entity = child['isDirectory'] == true
           ? sourceDirectory(reference)
           : sourceFile(reference, name);
-      // ignore: invalid_use_of_internal_member
-      yield entity.platform;
+      yield entity;
     }
   }
 }

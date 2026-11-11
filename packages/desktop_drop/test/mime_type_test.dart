@@ -1,11 +1,8 @@
-import 'package:cross_file_io/cross_file_io.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:desktop_drop/src/drop_offer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  setUpAll(CrossFileIO.registerWith);
-
   test(
     'previews and files use the same MIME fallback without reading bytes',
     () {
@@ -30,7 +27,7 @@ void main() {
         }).items.single;
         // This file does not exist: MIME inference must not read its contents.
         final item = DropFileItem(
-          file: XFile.fileSystem(path: '/desktop-drop-metadata-only'),
+          file: XFile('/desktop-drop-metadata-only'),
           name: name,
           mimeType: provided,
         );
@@ -47,7 +44,7 @@ void main() {
       localPath: '/folder/photo.JPG',
     );
     final item = DropFileItem(
-      file: XFile.fileSystem(path: '/folder/photo.JPG'),
+      file: XFile('/folder/photo.JPG'),
       name: '',
       localPath: '/folder/photo.JPG',
     );

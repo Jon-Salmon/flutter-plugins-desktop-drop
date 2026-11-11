@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cross_file_io/cross_file_io.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:desktop_drop/src/native_transport.dart';
 import 'package:flutter/services.dart';
@@ -62,7 +61,6 @@ Future<void> mount(WidgetTester tester, Widget child) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() {
-    CrossFileIO.registerWith();
     NativeTransport.debugOverride = transport;
   });
   setUp(() {
@@ -843,7 +841,7 @@ void main() {
       () => directory.directory.list().toList(),
     ))!;
     expect(operations.last, 'resolve');
-    expect(await children.whereType<XFile>().single.name(), 'image.png');
+    expect(children.whereType<XFile>().single.name, 'image.png');
     final resolvedOperations = operations.length;
     expect(await tester.runAsync(() => directory.directory.list().length), 1);
     expect(operations.length, resolvedOperations);
@@ -954,7 +952,7 @@ void main() {
           .single
           .list()
           .toList();
-      expect(await (nested.single as XFile).name(), 'child.txt');
+      expect((nested.single as XFile).name, 'child.txt');
       expect(await (nested.single as XFile).readAsString(), 'ok');
       expect(
         drop!.items.whereType<DropStringItem>().map((item) => item.mimeType),

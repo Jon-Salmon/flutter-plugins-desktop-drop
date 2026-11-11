@@ -1,5 +1,7 @@
 # desktop_drop
 
+This is SongbookPro's cross_file 0.3 compatibility fork. See [FORK.md](FORK.md).
+
 [![Pub](https://img.shields.io/pub/v/desktop_drop.svg)](https://pub.dev/packages/desktop_drop)
 
 Receive files, directories, text, and URLs dragged into Flutter applications.
@@ -35,7 +37,7 @@ DropTarget(
 
 By default, targets accept all content kinds using copy. `acceptedKinds` accepts
 any drag containing a matching kind; it does not filter the delivered items.
-See the [example app](example) for files, directories, text, and nested targets.
+See the [upstream example app](https://github.com/MixinNetwork/flutter-plugins/tree/main/packages/desktop_drop/example) for files, directories, text, and nested targets.
 
 ## Receiving content
 

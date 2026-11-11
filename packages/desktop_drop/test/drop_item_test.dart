@@ -1,12 +1,9 @@
 import 'dart:io';
 
-import 'package:cross_file_io/cross_file_io.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  setUpAll(CrossFileIO.registerWith);
-
   test('local dropped file items expose XFile reads and a real path', () async {
     final directory = await Directory.systemTemp.createTemp('desktop_drop_');
     addTearDown(() => directory.delete(recursive: true));

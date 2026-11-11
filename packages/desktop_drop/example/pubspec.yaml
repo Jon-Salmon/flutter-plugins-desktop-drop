@@ -1,5 +1,4 @@
 name: desktop_drop_example
-resolution: workspace
 description: Demonstrates how to use the desktop_drop plugin.
 
 publish_to: 'none'
@@ -25,7 +24,6 @@ dependencies:
 dev_dependencies:
   integration_test:
     sdk: flutter
-  cross_file_io: ^1.0.0
   flutter_test:
     sdk: flutter
 

@@ -79,7 +79,7 @@ class _BookmarkToolsState extends State<BookmarkTools> {
             .startAccessingSecurityScopedResource(bookmark: saved.$2);
         if (!accessed) throw StateError('macOS denied security-scoped access');
       }
-      final file = XFile.fileSystem(path: saved.$1);
+      final file = XFile(saved.$1);
       final bytes = await file
           .openRead(0, 64)
           .expand((chunk) => chunk)

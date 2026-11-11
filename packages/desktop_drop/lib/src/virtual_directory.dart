@@ -1,42 +1,46 @@
-import 'package:cross_file/cross_file.dart';
-import 'package:cross_file_platform_interface/cross_file_platform_interface.dart';
+import 'directory_stub.dart' if (dart.library.io) 'directory_io.dart';
 
-// Browser entries and captured virtual files have no filesystem path. Expose
-// their children through the same XDirectory API used by local directories.
-XDirectory virtualDirectory(String name, Stream<XEntity> Function() list) =>
-    // This package supplies the platform implementation for drag data.
-    // ignore: invalid_use_of_internal_member
-    ScopedStorageXDirectory.fromPlatform(_VirtualDirectory(name, list));
+/// Read-only directory abstraction supplied by desktop_drop.
+///
+/// cross_file 0.3 has no directory type. Entries are either XFile or XDirectory;
+/// consume provider-backed entries before the onDrop callback completes.
+abstract class XDirectory {
+  XDirectory();
+  factory XDirectory.fileSystem({required String path}) =>
+      fileSystemDirectory(path);
 
-final class _VirtualDirectory extends PlatformScopedStorageXDirectory {
-  _VirtualDirectory(String name, this.children)
-    : super.implementation(
-        PlatformScopedStorageXDirectoryCreationParams(
-          uri:
-              'desktop-drop:directory/${_nextId++}/${Uri.encodeComponent(name)}',
-        ),
-      );
+  String get name;
+  Future<bool> exists();
+  Future<bool> canRead() => exists();
+  Stream<Object> list();
+  Future<void> dispose();
+}
 
-  static int _nextId = 0;
-  final Stream<XEntity> Function() children;
+XDirectory virtualDirectory(String name, Stream<Object> Function() list) =>
+    _VirtualDirectory(name, list);
+
+final class _VirtualDirectory extends XDirectory {
+  _VirtualDirectory(this.name, this.children);
+
+  @override
+  final String name;
+
+  final Stream<Object> Function() children;
   bool _disposed = false;
 
   @override
   Future<bool> exists() async => !_disposed;
-  @override
-  Future<bool> canRead() async => !_disposed;
   @override
   Future<void> dispose() async {
     _disposed = true;
   }
 
   @override
-  Stream<PlatformXEntity> list(PlatformListParams params) async* {
+  Stream<Object> list() async* {
     if (_disposed) throw StateError('Dropped directory has been released');
     await for (final entity in children()) {
-      // Unwrap only at the platform boundary; XDirectory wraps listed entities.
-      // ignore: invalid_use_of_internal_member
-      yield entity.platform;
+      if (_disposed) throw StateError('Dropped directory has been released');
+      yield entity;
     }
   }
 }

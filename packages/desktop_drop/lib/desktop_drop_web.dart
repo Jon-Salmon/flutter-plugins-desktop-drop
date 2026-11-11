@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 import 'dart:ui_web' as ui_web;
 
 import 'package:cross_file/cross_file.dart';
-import 'package:cross_file_web/cross_file_web.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart' as web;
@@ -65,7 +64,7 @@ class DesktopDropWeb {
 
   Future<DropItem> _entryToDropItem(
     web.FileSystemEntry entry,
-    void Function(XEntity) retain,
+    void Function(Object) retain,
   ) async {
     if (entry.isDirectory) {
       final directory = entry as web.FileSystemDirectoryEntry;
@@ -103,10 +102,8 @@ class DesktopDropWeb {
     return _fileToDropItem(file, retain);
   }
 
-  DropFileItem _fileToDropItem(web.File file, void Function(XEntity) retain) {
-    final resource = ScopedStorageXFile.fromCreationParams(
-      WebScopedStorageXFileCreationParams.fromBlob(file),
-    );
+  DropFileItem _fileToDropItem(web.File file, void Function(Object) retain) {
+    final resource = _BrowserFile(file);
     retain(resource);
     return DropFileItem(
       file: resource,
@@ -115,9 +112,9 @@ class DesktopDropWeb {
     );
   }
 
-  Future<void> _disposeResource(XEntity entity) async {
-    if (entity is ScopedStorageXFile) await entity.dispose();
-    if (entity is ScopedStorageXDirectory) await entity.dispose();
+  Future<void> _disposeResource(Object entity) async {
+    if (entity is _BrowserFile) await entity.dispose();
+    if (entity is XDirectory) await entity.dispose();
   }
 
   DropOffer _offer(web.DataTransfer data, {required bool finalDrop}) {
@@ -246,9 +243,9 @@ class DesktopDropWeb {
     _hoverOffer = null;
     if (details == null) return;
     final session = _session;
-    final resources = <XEntity>[];
+    final resources = <Object>[];
     var active = true;
-    void retain(XEntity entity) {
+    void retain(Object entity) {
       if (!active) {
         unawaited(_disposeResource(entity));
         throw StateError('Dropped source has expired');
@@ -343,4 +340,16 @@ class DesktopDropWeb {
 
 extension DataTransferItemListExt on web.DataTransferItemList {
   external web.DataTransferItem operator [](int index);
+}
+
+// Keep Blob URLs alive until all reads in onDrop have completed.
+final class _BrowserFile extends XFile {
+  _BrowserFile(web.File file)
+    : super(
+        web.URL.createObjectURL(file),
+        name: file.name,
+        mimeType: file.type,
+      );
+
+  Future<void> dispose() async => web.URL.revokeObjectURL(path);
 }

@@ -7,7 +7,6 @@ import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 import 'dart:ui_web' as ui_web;
 
-import 'package:cross_file_web/cross_file_web.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:desktop_drop/desktop_drop_web.dart';
 import 'package:flutter/widgets.dart';
@@ -113,7 +112,6 @@ Future<Offset> mount(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() {
-    CrossFileWeb.registerWith(webPluginRegistrar);
     DesktopDropWeb.registerWith(webPluginRegistrar);
   });
 
@@ -493,7 +491,7 @@ void main() {
     await tester.runAsync(() async {
       final children = await directory.directory.list().toList();
       expect(children.length, 251);
-      expect(await (children.last as XFile).name(), '250.txt');
+      expect((children.last as XFile).name, '250.txt');
       expect(batches, 4);
       expect(await (children.last as XFile).readAsString(), '250');
       expect(await directory.directory.list().length, 251);
